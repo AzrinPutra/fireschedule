@@ -1,0 +1,45 @@
+# FireSchedule Configuration
+
+# User preferences
+user:
+  name: ""
+  timezone: "America/New_York"
+
+# Schedule categories
+categories:
+  school:
+    enabled: true
+    color: "blue"
+  learning:
+    enabled: true
+    color: "green"
+    languages:
+      - Python
+      - Bash
+  exercise:
+    enabled: true
+    color: "red"
+    default_days:
+      - Saturday: "Gym"
+      - Sunday: "Run"
+  social:
+    enabled: true
+    color: "yellow"
+
+# Reminders
+reminders:
+  enabled: true
+  default_minutes_before: 15
+  notification_method: "terminal"  # terminal, system
+
+# Data storage
+storage:
+  base_path: "data"
+  format: "markdown"
+  backup_path: "backups"
+
+# TUI settings
+tui:
+  theme: "default"
+  show_completed: false
+  week_starts_on: "monday"
