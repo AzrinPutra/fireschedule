@@ -30,7 +30,9 @@ categories:
 reminders:
   enabled: true
   default_minutes_before: 15
-  notification_method: "terminal"  # terminal, system
+  daily_summary_enabled: false
+  daily_summary_time: "08:00"
+  notification_sound: true
 
 # Data storage
 storage:

@@ -151,5 +151,40 @@ def view():
     app.run()
 
 
+@cli.command()
+def reminders():
+    """Check and send reminder notifications now."""
+    from src.notifications.config import ReminderConfig
+    from src.notifications.scheduler import ReminderScheduler
+    
+    config.load()
+    reminder_config = ReminderConfig.from_dict(config.reminders)
+    
+    scheduler = ReminderScheduler(reminder_config)
+    count = scheduler.check_and_notify()
+    
+    if count > 0:
+        click.echo(f"✓ Sent {count} reminder(s)")
+    else:
+        click.echo("No reminders to send at this time.")
+
+
+@cli.command()
+def reminder_status():
+    """Show reminder configuration status."""
+    from src.notifications.config import ReminderConfig
+    
+    config.load()
+    reminder_config = ReminderConfig.from_dict(config.reminders)
+    
+    click.echo("Reminder Configuration:")
+    click.echo(f"  Enabled: {reminder_config.enabled}")
+    click.echo(f"  Minutes before: {reminder_config.default_minutes_before}")
+    click.echo(f"  Daily summary: {reminder_config.daily_summary_enabled}")
+    if reminder_config.daily_summary_enabled:
+        click.echo(f"  Summary time: {reminder_config.daily_summary_time}")
+    click.echo(f"  Sound: {reminder_config.notification_sound}")
+
+
 if __name__ == "__main__":
     cli()

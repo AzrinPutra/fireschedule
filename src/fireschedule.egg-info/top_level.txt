@@ -3,5 +3,6 @@ __main__
 cli
 config
 models
+notifications
 storage
 tui
