@@ -18,3 +18,5 @@ CATEGORY_COLORS = {
     "exercise": "#2ecc71",
     "social": "#e67e22",
 }
+
+TIME_SLOTS = ["Morning", "Afternoon", "Evening"]

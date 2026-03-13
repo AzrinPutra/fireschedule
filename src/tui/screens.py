@@ -1,8 +1,12 @@
 """FireSchedule TUI Screens."""
 
+from datetime import datetime, timedelta
+
 from textual.screen import Screen
-from textual.widgets import Static, Button
+from textual.widgets import Static
 from textual.containers import Container, VerticalScroll
+
+from src.tui.widgets import WeekView
 
 
 class MenuScreen(Screen):
@@ -12,7 +16,6 @@ class MenuScreen(Screen):
         super().__init__(name=name)
 
     def compose(self):
-        """Compose the menu screen."""
         yield Container(
             Static("🔥 FireSchedule", id="title"),
             VerticalScroll(
@@ -27,11 +30,9 @@ class MenuScreen(Screen):
         )
 
     def on_mount(self) -> None:
-        """Set up key listeners."""
         self.app.bind("d", "push_screen('dashboard')", "Dashboard")
 
     def on_screen_resumed(self) -> None:
-        """Called when screen is resumed."""
         self.query_one("#title", Static).focus()
 
 
@@ -40,31 +41,50 @@ class DashboardScreen(Screen):
 
     def __init__(self, name: str = None):
         super().__init__(name=name)
+        self.week_view: WeekView = None
 
     def compose(self):
-        """Compose the dashboard screen."""
         yield Container(
             Static("📅 Week Dashboard", id="dashboard-title"),
-            VerticalScroll(id="week-view"),
+            VerticalScroll(WeekView(id="week-view")),
+            Static("\n[j/k] Navigate  [h/l] Prev/Next Week  [q] Quit", id="nav-hint"),
             id="dashboard",
         )
 
     def on_mount(self) -> None:
-        """Populate week view on mount."""
-        week_view = self.query_one("#week-view", VerticalScroll)
-        week_view.mount(Static(self._generate_week_view()))
+        self.week_view = self.query_one("#week-view", WeekView)
+        self._setup_keybindings()
 
-    def _generate_week_view(self) -> str:
-        """Generate the week view content."""
-        from datetime import datetime, timedelta
+    def _setup_keybindings(self):
+        self.app.bind("j", self._navigate_down, "Down")
+        self.app.bind("k", self._navigate_up, "Up")
+        self.app.bind("h", self._prev_week, "Prev Week")
+        self.app.bind("l", self._next_week, "Next Week")
 
-        today = datetime.now()
-        days = []
-        for i in range(7):
-            day = today + timedelta(days=i)
-            day_name = day.strftime("%A")
-            day_date = day.strftime("%b %d")
-            days.append(f"{day_name:10} | {day_date} | (no events)")
+    def action_navigate_down(self):
+        if self.week_view:
+            self.week_view.navigate_down()
 
-        header = "Day         | Date      | Events\n" + "-" * 40
-        return header + "\n" + "\n".join(days)
+    def action_navigate_up(self):
+        if self.week_view:
+            self.week_view.navigate_up()
+
+    def action_prev_week(self):
+        if self.week_view:
+            self.week_view.prev_week()
+
+    def action_next_week(self):
+        if self.week_view:
+            self.week_view.next_week()
+
+    def _navigate_down(self):
+        self.action_navigate_down()
+
+    def _navigate_up(self):
+        self.action_navigate_up()
+
+    def _prev_week(self):
+        self.action_prev_week()
+
+    def _next_week(self):
+        self.action_next_week()
