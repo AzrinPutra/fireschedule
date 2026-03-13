@@ -4,7 +4,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Header, Footer, Static
 
-from fireschedule_src.tui.screens import MenuScreen, DashboardScreen
+from fireschedule_src.tui.screens import MenuScreen, DashboardScreen, AddEventScreen, ListEventsScreen, BackupScreen, SettingsScreen
 from fireschedule_src.tui.theme import FIRESCHEDULE_THEME
 
 
@@ -16,16 +16,15 @@ class FireScheduleApp(App):
         Binding("m", "push_screen('menu')", "Menu"),
         Binding("d", "push_screen('dashboard')", "Dashboard"),
         Binding("escape", "pop_screen", "Back", show=False),
-        Binding("1", "goto_dashboard", "Dashboard", show=False),
-        Binding("2", "cli_add", "Add", show=False),
-        Binding("3", "cli_list", "List", show=False),
-        Binding("4", "cli_backup", "Backup", show=False),
-        Binding("5", "cli_settings", "Settings", show=False),
     ]
 
     SCREENS = {
         "menu": MenuScreen,
         "dashboard": DashboardScreen,
+        "add_event": AddEventScreen,
+        "list_events": ListEventsScreen,
+        "backup": BackupScreen,
+        "settings": SettingsScreen,
     }
 
     CSS = """
@@ -71,6 +70,36 @@ Screen {
     text-style: bold;
     color: $primary;
 }
+
+#form-title, #events-title, #backup-title, #settings-title {
+    text-style: bold;
+    color: $primary;
+    height: 3;
+    content-align: center middle;
+}
+
+#form-container, #events-container, #backup-container, #settings-container {
+    margin: 1 2;
+}
+
+Input, Select, TextArea {
+    margin: 0 1;
+}
+
+#form-buttons, #backup-buttons {
+    height: auto;
+    align: center middle;
+    margin: 1 2;
+}
+
+Button {
+    margin: 0 1;
+}
+
+#form-hint, #filter-hint, #backup-hint, #settings-hint {
+    color: $text-muted;
+    margin: 1 2;
+}
 """
 
     CSS_VARIABLES = {
@@ -104,25 +133,3 @@ Screen {
     def action_goto_dashboard(self) -> None:
         """Go to dashboard."""
         self.push_screen("dashboard")
-
-    def action_cli_add(self) -> None:
-        """Add new event via CLI."""
-        import sys
-        self.exit()
-        sys.argv = ["fireschedule", "add", "--help"]
-
-    def action_cli_list(self) -> None:
-        """List events via CLI."""
-        import sys
-        self.exit()
-        sys.argv = ["fireschedule", "list-events"]
-
-    def action_cli_backup(self) -> None:
-        """Show backup instructions."""
-        self.exit()
-        print("\nTo backup your data, run: ./scripts/backup.sh")
-
-    def action_cli_settings(self) -> None:
-        """Show settings instructions."""
-        self.exit()
-        print("\nTo edit settings, edit config.yaml")
