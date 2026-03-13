@@ -44,8 +44,28 @@ class DashboardScreen(Screen):
         self.week_view: WeekView = None
 
     def compose(self):
+        from src.integrations.gcal import GoogleCalendarAuth, SyncStatus
+        from src.config import config
+        
+        config.load()
+        gcal_config = config.data.get("gcal", {})
+        
+        auth = GoogleCalendarAuth(
+            credentials_file=gcal_config.get("credentials_file", "credentials.json"),
+            token_file=gcal_config.get("token_file", "token.json")
+        )
+        
+        sync_status = "🔴 Not connected"
+        if auth.is_authenticated():
+            status = SyncStatus()
+            if status.last_sync:
+                sync_status = f"🟢 Synced: {status.last_sync[:16]}"
+            else:
+                sync_status = "🟡 Authenticated"
+        
         yield Container(
             Static("📅 Week Dashboard", id="dashboard-title"),
+            Static(sync_status, id="sync-status"),
             VerticalScroll(WeekView(id="week-view")),
             Static("\n[j/k] Navigate  [h/l] Prev/Next Week  [q] Quit", id="nav-hint"),
             id="dashboard",

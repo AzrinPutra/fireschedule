@@ -355,5 +355,189 @@ def notion_import(file_path: str, format: str):
         sys.exit(1)
 
 
+@cli.command()
+@click.option("--credentials", "-c", default="credentials.json", help="Path to OAuth credentials file")
+def gcal_auth(credentials: str):
+    """Authenticate with Google Calendar.
+    
+    Run this command first to set up Google Calendar integration.
+    You need to download OAuth credentials from Google Cloud Console.
+    """
+    from src.integrations.gcal import GoogleCalendarAuth
+    from src.config import config
+    
+    config.load()
+    gcal_config = config.data.get("gcal", {})
+    
+    auth = GoogleCalendarAuth(
+        credentials_file=gcal_config.get("credentials_file", "credentials.json"),
+        token_file=gcal_config.get("token_file", "token.json")
+    )
+    
+    if auth.is_authenticated():
+        click.echo("Already authenticated with Google Calendar.")
+        return
+    
+    if not Path(credentials).exists():
+        click.echo(f"Error: Credentials file '{credentials}' not found.")
+        click.echo("\nTo get credentials:")
+        click.echo("1. Go to https://console.cloud.google.com/")
+        click.echo("2. Create a project and enable Google Calendar API")
+        click.echo("3. Create OAuth 2.0 credentials (Desktop app)")
+        click.echo(f"4. Download the credentials.json file to: {Path.cwd()}")
+        sys.exit(1)
+    
+    if auth.authenticate(credentials):
+        click.echo("✓ Successfully authenticated with Google Calendar!")
+    else:
+        click.echo("✗ Authentication failed.", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.option("--days", "-d", default=7, type=int, help="Number of days ahead to fetch")
+def gcal_pull(days: int):
+    """Pull events from Google Calendar.
+    
+    Import events from your Google Calendar into FireSchedule.
+    """
+    from src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient
+    from src.config import config
+    
+    config.load()
+    gcal_config = config.data.get("gcal", {})
+    
+    auth = GoogleCalendarAuth(
+        credentials_file=gcal_config.get("credentials_file", "credentials.json"),
+        token_file=gcal_config.get("token_file", "token.json")
+    )
+    
+    if not auth.is_authenticated():
+        click.echo("Not authenticated. Run 'fireschedule gcal-auth' first.", err=True)
+        sys.exit(1)
+    
+    client = GoogleCalendarClient(
+        auth,
+        calendar_id=gcal_config.get("calendar_id", "primary")
+    )
+    
+    storage = MarkdownStorage()
+    events = client.pull_events(days_ahead=days)
+    
+    imported = 0
+    for event in events:
+        storage.save_event(event)
+        imported += 1
+    
+    click.echo(f"✓ Pulled {imported} event(s) from Google Calendar")
+
+
+@cli.command()
+def gcal_push():
+    """Push local events to Google Calendar.
+    
+    Export all local events to your Google Calendar.
+    """
+    from src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient
+    from src.config import config
+    
+    config.load()
+    gcal_config = config.data.get("gcal", {})
+    
+    auth = GoogleCalendarAuth(
+        credentials_file=gcal_config.get("credentials_file", "credentials.json"),
+        token_file=gcal_config.get("token_file", "token.json")
+    )
+    
+    if not auth.is_authenticated():
+        click.echo("Not authenticated. Run 'fireschedule gcal-auth' first.", err=True)
+        sys.exit(1)
+    
+    client = GoogleCalendarClient(
+        auth,
+        calendar_id=gcal_config.get("calendar_id", "primary")
+    )
+    
+    storage = MarkdownStorage()
+    events = []
+    from src.models.events import Category
+    for cat in Category:
+        events.extend(storage.list_events(cat))
+    
+    exported = 0
+    for event in events:
+        if not hasattr(event, 'gcal_id') or not event.gcal_id:
+            gcal_id = client.push_event(event)
+            if gcal_id:
+                event.gcal_id = gcal_id
+                storage.save_event(event)
+                exported += 1
+    
+    click.echo(f"✓ Pushed {exported} event(s) to Google Calendar")
+
+
+@cli.command()
+@click.option("--days", "-d", default=7, type=int, help="Number of days ahead to sync")
+def gcal_sync(days: int):
+    """Bi-directional sync with Google Calendar.
+    
+    Pull events from Google Calendar and push local events to Google Calendar.
+    """
+    from src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient, SyncStatus
+    from src.config import config
+    
+    config.load()
+    gcal_config = config.data.get("gcal", {})
+    
+    auth = GoogleCalendarAuth(
+        credentials_file=gcal_config.get("credentials_file", "credentials.json"),
+        token_file=gcal_config.get("token_file", "token.json")
+    )
+    
+    if not auth.is_authenticated():
+        click.echo("Not authenticated. Run 'fireschedule gcal-auth' first.", err=True)
+        sys.exit(1)
+    
+    client = GoogleCalendarClient(
+        auth,
+        calendar_id=gcal_config.get("calendar_id", "primary")
+    )
+    
+    storage = MarkdownStorage()
+    result = client.sync_events(storage, days_ahead=days)
+    
+    status = SyncStatus()
+    status.update(imported=result["imported"], exported=result["exported"])
+    
+    click.echo(f"✓ Sync complete!")
+    click.echo(f"  Imported from GCal: {result['imported']}")
+    click.echo(f"  Exported to GCal: {result['exported']}")
+    click.echo(f"  Total GCal events: {result['total_gcal']}")
+    click.echo(f"  Total local events: {result['total_local']}")
+
+
+@cli.command()
+def gcal_status():
+    """Show Google Calendar sync status."""
+    from src.integrations.gcal import GoogleCalendarAuth, SyncStatus
+    from src.config import config
+    
+    config.load()
+    gcal_config = config.data.get("gcal", {})
+    
+    auth = GoogleCalendarAuth(
+        credentials_file=gcal_config.get("credentials_file", "credentials.json"),
+        token_file=gcal_config.get("token_file", "token.json")
+    )
+    
+    click.echo("Google Calendar Status:")
+    click.echo(f"  Authenticated: {'Yes' if auth.is_authenticated() else 'No'}")
+    
+    if auth.is_authenticated():
+        status = SyncStatus()
+        click.echo(f"  Last sync: {status.last_sync or 'Never'}")
+        click.echo(f"  Status: {status.status}")
+
+
 if __name__ == "__main__":
     cli()

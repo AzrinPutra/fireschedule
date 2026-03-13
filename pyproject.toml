@@ -13,6 +13,8 @@ dependencies = [
     "plyer>=2.1",
     "apscheduler>=3.10",
     "requests>=2.31",
+    "google-auth>=2.0",
+    "google-api-python-client>=2.0",
 ]
 
 [project.scripts]

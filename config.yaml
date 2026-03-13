@@ -52,3 +52,12 @@ notion:
   api_token: ""
   database_id: ""
   auto_sync: false
+
+# Google Calendar integration
+gcal:
+  enabled: false
+  credentials_file: "credentials.json"
+  token_file: "token.json"
+  calendar_id: "primary"
+  auto_sync: false
+  sync_interval_minutes: 30
