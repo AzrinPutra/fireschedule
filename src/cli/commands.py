@@ -39,7 +39,7 @@ def add(title: str, category: str, date: Optional[str], time: Optional[str], dur
         id=f"event-{datetime.now().strftime('%Y%m%d%H%M%S')}",
         title=title,
         category=Category[category.upper()],
-        event_type=EventType.GENERAL,
+        event_type=EventType.SESSION,
         date=date,
         time=time or "09:00",
         duration_minutes=duration,
@@ -47,7 +47,7 @@ def add(title: str, category: str, date: Optional[str], time: Optional[str], dur
         priority=Priority.MEDIUM,
     )
     
-    storage.save(event)
+    storage.save_event(event)
     click.echo(f"✓ Event '{title}' added successfully!")
     click.echo(f"  ID: {event.id}")
     click.echo(f"  Category: {category}")
@@ -63,15 +63,17 @@ def list_events(today: bool, week: bool, category: Optional[str]):
     from rich.console import Console
     from rich.table import Table
     
-    events = storage.load_all()
+    events = []
+    for cat in Category:
+        events.extend(storage.list_events(cat))
     
     if today:
         today_str = datetime.now().strftime("%Y-%m-%d")
         events = [e for e in events if e.date == today_str]
     elif week:
-        today = datetime.now().date()
-        week_end = today + timedelta(days=7)
-        events = [e for e in events if today <= datetime.strptime(e.date, "%Y-%m-%d").date() < week_end]
+        today_date = datetime.now().date()
+        week_end = today_date + timedelta(days=7)
+        events = [e for e in events if today_date <= datetime.strptime(e.date, "%Y-%m-%d").date() < week_end]
     
     if category:
         cat_enum = Category[category.upper()]
@@ -94,7 +96,7 @@ def list_events(today: bool, week: bool, category: Optional[str]):
         table.add_row(
             event.id,
             event.title,
-            str(event.category.name),
+            str(event.category.value),
             event.date,
             event.time or "-"
         )
@@ -111,7 +113,13 @@ def list_events(today: bool, week: bool, category: Optional[str]):
 @click.option("--category", "-c", type=click.Choice(["school", "learning", "exercise", "social"]), help="New category")
 def edit(event_id: str, title: Optional[str], date: Optional[str], time: Optional[str], category: Optional[str]):
     """Edit an existing event."""
-    event = storage.load(event_id)
+    event = storage.load_event(Category.LEARNING, event_id, datetime.now().strftime("%Y-%m-%d"))
+    
+    if not event:
+        for cat in Category:
+            event = storage.load_event(cat, event_id, "")
+            if event:
+                break
     
     if not event:
         click.echo(f"✗ Event '{event_id}' not found.", err=True)
@@ -126,7 +134,7 @@ def edit(event_id: str, title: Optional[str], date: Optional[str], time: Optiona
     if category:
         event.category = Category[category.upper()]
     
-    storage.save(event)
+    storage.save_event(event)
     click.echo(f"✓ Event '{event_id}' updated successfully!")
 
 
@@ -134,7 +142,11 @@ def edit(event_id: str, title: Optional[str], date: Optional[str], time: Optiona
 @click.argument("event_id")
 def delete(event_id: str):
     """Delete an event."""
-    success = storage.delete(event_id)
+    success = False
+    for cat in Category:
+        success = storage.delete_event(cat, event_id, "")
+        if success:
+            break
     
     if success:
         click.echo(f"✓ Event '{event_id}' deleted successfully!")
@@ -184,6 +196,112 @@ def reminder_status():
     if reminder_config.daily_summary_enabled:
         click.echo(f"  Summary time: {reminder_config.daily_summary_time}")
     click.echo(f"  Sound: {reminder_config.notification_sound}")
+
+
+@cli.command()
+@click.argument("title")
+@click.option("--language", "-l", type=click.Choice(["Python", "Bash"]), required=True, help="Programming language")
+@click.option("--topic", "-t", default=None, help="Topic being learned")
+@click.option("--date", "-d", default=None, help="Event date (YYYY-MM-DD)")
+@click.option("--time", default=None, help="Event time (HH:MM)")
+@click.option("--duration", default=60, type=int, help="Duration in minutes")
+@click.option("--notes", default="", help="Learning notes")
+def learn(title: str, language: str, topic: Optional[str], date: Optional[str], time: Optional[str], duration: int, notes: str):
+    """Add a learning practice session (Python/Bash)."""
+    from src.models.events import LearningEvent, Priority
+    
+    if date is None:
+        date = datetime.now().strftime("%Y-%m-%d")
+    
+    event = LearningEvent(
+        id=f"learn-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        title=title,
+        category=Category.LEARNING,
+        event_type=EventType.PRACTICE,
+        date=date,
+        time=time or "14:00",
+        duration_minutes=duration,
+        language=language,
+        topic=topic,
+        notes=notes,
+        priority=Priority.MEDIUM,
+    )
+    
+    storage.save_event(event)
+    click.echo(f"✓ Learning session '{title}' added!")
+    click.echo(f"  Language: {language}")
+    click.echo(f"  Topic: {topic or 'General'}")
+    click.echo(f"  Date: {date}")
+
+
+@cli.command()
+@click.option("--language", "-l", type=click.Choice(["Python", "Bash", "all"]), default="all", help="Filter by language")
+def progress(language: str):
+    """Show learning progress statistics."""
+    from rich.console import Console
+    from rich.table import Table
+    from rich.panel import Panel
+    
+    events = storage.list_events(Category.LEARNING)
+    
+    if language != "all":
+        events = [e for e in events if hasattr(e, 'language') and e.language == language]
+    
+    if not events:
+        click.echo("No learning sessions found.")
+        return
+    
+    console = Console()
+    
+    total_sessions = len(events)
+    completed_sessions = sum(1 for e in events if e.completed)
+    total_minutes = sum(e.duration_minutes for e in events)
+    
+    languages = {}
+    topics = {}
+    for e in events:
+        if hasattr(e, 'language'):
+            lang = e.language
+            languages[lang] = languages.get(lang, 0) + 1
+        if hasattr(e, 'topic') and e.topic:
+            topic = e.topic
+            topics[topic] = topics.get(topic, 0) + 1
+    
+    stats = f"""[bold]Total Sessions:[/bold] {total_sessions}
+[bold]Completed:[/bold] {completed_sessions}
+[bold]Total Time:[/bold] {total_minutes} minutes ({total_minutes/60:.1f} hours)
+
+[bold]By Language:[/bold]
+"""
+    for lang, count in sorted(languages.items()):
+        stats += f"  {lang}: {count} sessions\n"
+    
+    if topics:
+        stats += "\n[bold]Topics Covered:[/bold]\n"
+        for topic, count in sorted(topics.items(), key=lambda x: -x[1])[:10]:
+            stats += f"  {topic}: {count}\n"
+    
+    console.print(Panel(stats, title="📚 Learning Progress"))
+    
+    table = Table(title="Recent Learning Sessions")
+    table.add_column("Date", style="yellow")
+    table.add_column("Language", style="cyan")
+    table.add_column("Topic", style="green")
+    table.add_column("Duration", style="magenta")
+    table.add_column("Status")
+    
+    sorted_events = sorted(events, key=lambda e: e.date, reverse=True)[:10]
+    for event in sorted_events:
+        status = "✅" if event.completed else "⏳"
+        table.add_row(
+            event.date,
+            getattr(event, 'language', '-'),
+            getattr(event, 'topic', '-') or '-',
+            f"{event.duration_minutes}m",
+            status
+        )
+    
+    console.print(table)
 
 
 if __name__ == "__main__":
