@@ -12,6 +12,7 @@ dependencies = [
     "click>=8.0",
     "plyer>=2.1",
     "apscheduler>=3.10",
+    "requests>=2.31",
 ]
 
 [project.scripts]

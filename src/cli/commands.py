@@ -304,5 +304,56 @@ def progress(language: str):
     console.print(table)
 
 
+@cli.command()
+@click.option("--format", "-f", type=click.Choice(["markdown", "csv"]), default="markdown", help="Export format")
+@click.option("--output", "-o", default="fireschedule_export.md", help="Output file path")
+def notion_export(format: str, output: str):
+    """Export events to Notion-compatible format.
+    
+    Export your schedule to Notion-importable markdown or CSV.
+    Use 'markdown' format for direct Notion import.
+    Use 'csv' for backup/analysis.
+    """
+    from src.integrations.notion import NotionExporter
+    
+    storage = MarkdownStorage()
+    exporter = NotionExporter(storage)
+    
+    output_path = Path(output)
+    
+    if format == "markdown":
+        count = exporter.export_to_markdown(output_path)
+        click.echo(f"✓ Exported {count} event(s) to {output_path}")
+        click.echo("  Import this file into Notion using: Import > Markdown")
+    else:
+        count = exporter.export_to_csv(output_path)
+        click.echo(f"✓ Exported {count} event(s) to {output_path}")
+
+
+@cli.command()
+@click.argument("file_path", type=click.Path(exists=True))
+@click.option("--format", "-f", type=click.Choice(["csv"]), default="csv", help="Import format")
+def notion_import(file_path: str, format: str):
+    """Import events from Notion export.
+    
+    FILE_PATH: Path to the exported CSV file from Notion.
+    
+    Note: Notion exports must be in CSV format.
+    """
+    from src.integrations.notion import NotionImporter
+    
+    storage = MarkdownStorage()
+    importer = NotionImporter(storage)
+    
+    input_path = Path(file_path)
+    
+    if format == "csv":
+        count = importer.import_from_csv(input_path)
+        click.echo(f"✓ Imported {count} event(s) from {input_path}")
+    else:
+        click.echo(f"Unsupported format: {format}", err=True)
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     cli()

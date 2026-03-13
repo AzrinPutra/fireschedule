@@ -45,3 +45,10 @@ tui:
   theme: "default"
   show_completed: false
   week_starts_on: "monday"
+
+# Notion integration
+notion:
+  enabled: false
+  api_token: ""
+  database_id: ""
+  auto_sync: false
