@@ -26,14 +26,32 @@ class MenuScreen(Screen):
                 Static("5. Settings", id="menu-option-5"),
                 id="menu-options",
             ),
-            Static("\n[Press D for Dashboard, Q to quit]", id="footer-hint"),
+            Static("\n[1-5] Select  [D] Dashboard  [Q] Quit", id="footer-hint"),
         )
 
     def on_mount(self) -> None:
         self.app.bind("d", "push_screen('dashboard')")
+        self.app.bind("1", "push_screen('dashboard')")
+        self.app.bind("2", "cmd_add")
+        self.app.bind("3", "cmd_list")
+        self.app.bind("4", "cmd_backup")
+        self.app.bind("5", "cmd_settings")
 
-    def on_screen_resumed(self) -> None:
-        self.query_one("#title", Static).focus()
+    def action_cmd_add(self):
+        from fireschedule_src.cli.commands import add
+        self.app.exit()
+
+    def action_cmd_list(self):
+        from fireschedule_src.cli.commands import list_events
+        self.app.exit()
+
+    def action_cmd_backup(self):
+        print("\nTo backup your data, run: ./scripts/backup.sh")
+        self.app.exit()
+
+    def action_cmd_settings(self):
+        print("\nTo edit settings, edit config.yaml")
+        self.app.exit()
 
 
 class DashboardScreen(Screen):
@@ -67,7 +85,7 @@ class DashboardScreen(Screen):
             Static("📅 Week Dashboard", id="dashboard-title"),
             Static(sync_status, id="sync-status"),
             VerticalScroll(WeekView(id="week-view")),
-            Static("\n[j/k] Navigate  [h/l] Prev/Next Week  [q] Quit", id="nav-hint"),
+            Static("\n[j/k] Navigate  [h/l] Prev/Next Week  [ESC] Back to Menu  [Q] Quit", id="nav-hint"),
             id="dashboard",
         )
 
@@ -76,10 +94,14 @@ class DashboardScreen(Screen):
         self._setup_keybindings()
 
     def _setup_keybindings(self):
-        self.app.bind("j", self._navigate_down)
-        self.app.bind("k", self._navigate_up)
-        self.app.bind("h", self._prev_week)
-        self.app.bind("l", self._next_week)
+        self.app.bind("j", "navigate_down")
+        self.app.bind("k", "navigate_up")
+        self.app.bind("h", "prev_week")
+        self.app.bind("l", "next_week")
+        self.app.bind("escape", "go_back")
+
+    def action_go_back(self):
+        self.app.pop_screen()
 
     def action_navigate_down(self):
         if self.week_view:

@@ -16,6 +16,11 @@ class FireScheduleApp(App):
         Binding("m", "push_screen('menu')", "Menu"),
         Binding("d", "push_screen('dashboard')", "Dashboard"),
         Binding("escape", "pop_screen", "Back", show=False),
+        Binding("1", "goto_dashboard", "Dashboard", show=False),
+        Binding("2", "cli_add", "Add", show=False),
+        Binding("3", "cli_list", "List", show=False),
+        Binding("4", "cli_backup", "Backup", show=False),
+        Binding("5", "cli_settings", "Settings", show=False),
     ]
 
     SCREENS = {
@@ -95,3 +100,29 @@ Screen {
     def action_quit(self) -> None:
         """Quit the application."""
         self.exit()
+
+    def action_goto_dashboard(self) -> None:
+        """Go to dashboard."""
+        self.push_screen("dashboard")
+
+    def action_cli_add(self) -> None:
+        """Add new event via CLI."""
+        import sys
+        self.exit()
+        sys.argv = ["fireschedule", "add", "--help"]
+
+    def action_cli_list(self) -> None:
+        """List events via CLI."""
+        import sys
+        self.exit()
+        sys.argv = ["fireschedule", "list-events"]
+
+    def action_cli_backup(self) -> None:
+        """Show backup instructions."""
+        self.exit()
+        print("\nTo backup your data, run: ./scripts/backup.sh")
+
+    def action_cli_settings(self) -> None:
+        """Show settings instructions."""
+        self.exit()
+        print("\nTo edit settings, edit config.yaml")

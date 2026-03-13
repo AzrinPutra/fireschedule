@@ -96,7 +96,7 @@ def list_events(today: bool, week: bool, category: Optional[str]):
         table.add_row(
             event.id,
             event.title,
-            str(event.category.value),
+            str(event.category),
             event.date,
             event.time or "-"
         )
