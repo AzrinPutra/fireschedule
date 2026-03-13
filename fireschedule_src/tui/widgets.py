@@ -7,7 +7,7 @@ from textual.widget import Widget
 from textual.widgets import Static
 from textual.message import Message
 
-from src.tui.theme import CATEGORY_COLORS, TIME_SLOTS
+from fireschedule_src.tui.theme import CATEGORY_COLORS, TIME_SLOTS
 
 
 class WeekView(Widget):

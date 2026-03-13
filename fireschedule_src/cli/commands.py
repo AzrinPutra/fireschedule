@@ -8,9 +8,9 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.config import config
-from src.models.events import Category, EventType, BaseEvent
-from src.storage.markdown import MarkdownStorage
+from fireschedule_src.config import config
+from fireschedule_src.models.events import Category, EventType, BaseEvent
+from fireschedule_src.storage.markdown import MarkdownStorage
 
 storage = MarkdownStorage()
 
@@ -30,7 +30,7 @@ def cli():
 @click.option("--description", default="", help="Event description")
 def add(title: str, category: str, date: Optional[str], time: Optional[str], duration: int, description: str):
     """Add a new event."""
-    from src.models.events import Priority
+    from fireschedule_src.models.events import Priority
     
     if date is None:
         date = datetime.now().strftime("%Y-%m-%d")
@@ -158,7 +158,7 @@ def delete(event_id: str):
 @cli.command()
 def view():
     """Open the TUI dashboard."""
-    from src.tui.app import FireScheduleApp
+    from fireschedule_src.tui.app import FireScheduleApp
     app = FireScheduleApp()
     app.run()
 
@@ -166,8 +166,8 @@ def view():
 @cli.command()
 def reminders():
     """Check and send reminder notifications now."""
-    from src.notifications.config import ReminderConfig
-    from src.notifications.scheduler import ReminderScheduler
+    from fireschedule_src.notifications.config import ReminderConfig
+    from fireschedule_src.notifications.scheduler import ReminderScheduler
     
     config.load()
     reminder_config = ReminderConfig.from_dict(config.reminders)
@@ -184,7 +184,7 @@ def reminders():
 @cli.command()
 def reminder_status():
     """Show reminder configuration status."""
-    from src.notifications.config import ReminderConfig
+    from fireschedule_src.notifications.config import ReminderConfig
     
     config.load()
     reminder_config = ReminderConfig.from_dict(config.reminders)
@@ -208,7 +208,7 @@ def reminder_status():
 @click.option("--notes", default="", help="Learning notes")
 def learn(title: str, language: str, topic: Optional[str], date: Optional[str], time: Optional[str], duration: int, notes: str):
     """Add a learning practice session (Python/Bash)."""
-    from src.models.events import LearningEvent, Priority
+    from fireschedule_src.models.events import LearningEvent, Priority
     
     if date is None:
         date = datetime.now().strftime("%Y-%m-%d")
@@ -314,7 +314,7 @@ def notion_export(format: str, output: str):
     Use 'markdown' format for direct Notion import.
     Use 'csv' for backup/analysis.
     """
-    from src.integrations.notion import NotionExporter
+    from fireschedule_src.integrations.notion import NotionExporter
     
     storage = MarkdownStorage()
     exporter = NotionExporter(storage)
@@ -340,7 +340,7 @@ def notion_import(file_path: str, format: str):
     
     Note: Notion exports must be in CSV format.
     """
-    from src.integrations.notion import NotionImporter
+    from fireschedule_src.integrations.notion import NotionImporter
     
     storage = MarkdownStorage()
     importer = NotionImporter(storage)
@@ -363,11 +363,11 @@ def gcal_auth(credentials: str):
     Run this command first to set up Google Calendar integration.
     You need to download OAuth credentials from Google Cloud Console.
     """
-    from src.integrations.gcal import GoogleCalendarAuth
-    from src.config import config
+    from fireschedule_src.integrations.gcal import GoogleCalendarAuth
+    from fireschedule_src.config import config
     
     config.load()
-    gcal_config = config.data.get("gcal", {})
+    gcal_config = config.get("gcal", {})
     
     auth = GoogleCalendarAuth(
         credentials_file=gcal_config.get("credentials_file", "credentials.json"),
@@ -401,11 +401,11 @@ def gcal_pull(days: int):
     
     Import events from your Google Calendar into FireSchedule.
     """
-    from src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient
-    from src.config import config
+    from fireschedule_src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient
+    from fireschedule_src.config import config
     
     config.load()
-    gcal_config = config.data.get("gcal", {})
+    gcal_config = config.get("gcal", {})
     
     auth = GoogleCalendarAuth(
         credentials_file=gcal_config.get("credentials_file", "credentials.json"),
@@ -438,11 +438,11 @@ def gcal_push():
     
     Export all local events to your Google Calendar.
     """
-    from src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient
-    from src.config import config
+    from fireschedule_src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient
+    from fireschedule_src.config import config
     
     config.load()
-    gcal_config = config.data.get("gcal", {})
+    gcal_config = config.get("gcal", {})
     
     auth = GoogleCalendarAuth(
         credentials_file=gcal_config.get("credentials_file", "credentials.json"),
@@ -460,7 +460,7 @@ def gcal_push():
     
     storage = MarkdownStorage()
     events = []
-    from src.models.events import Category
+    from fireschedule_src.models.events import Category
     for cat in Category:
         events.extend(storage.list_events(cat))
     
@@ -483,11 +483,11 @@ def gcal_sync(days: int):
     
     Pull events from Google Calendar and push local events to Google Calendar.
     """
-    from src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient, SyncStatus
-    from src.config import config
+    from fireschedule_src.integrations.gcal import GoogleCalendarAuth, GoogleCalendarClient, SyncStatus
+    from fireschedule_src.config import config
     
     config.load()
-    gcal_config = config.data.get("gcal", {})
+    gcal_config = config.get("gcal", {})
     
     auth = GoogleCalendarAuth(
         credentials_file=gcal_config.get("credentials_file", "credentials.json"),
@@ -519,11 +519,11 @@ def gcal_sync(days: int):
 @cli.command()
 def gcal_status():
     """Show Google Calendar sync status."""
-    from src.integrations.gcal import GoogleCalendarAuth, SyncStatus
-    from src.config import config
+    from fireschedule_src.integrations.gcal import GoogleCalendarAuth, SyncStatus
+    from fireschedule_src.config import config
     
     config.load()
-    gcal_config = config.data.get("gcal", {})
+    gcal_config = config.get("gcal", {})
     
     auth = GoogleCalendarAuth(
         credentials_file=gcal_config.get("credentials_file", "credentials.json"),

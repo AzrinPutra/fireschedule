@@ -9,11 +9,11 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime
 
-from src.models.events import (
+from fireschedule_src.models.events import (
     BaseEvent, Category, EventType, Priority,
     SchoolEvent, LearningEvent, ExerciseEvent, SocialEvent
 )
-from src.storage.markdown import MarkdownStorage
+from fireschedule_src.storage.markdown import MarkdownStorage
 
 
 class NotionExporter:

@@ -3,9 +3,10 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+fireschedule_dir = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(fireschedule_dir))
 
-from src.cli.commands import cli
+from fireschedule_src.cli.commands import cli
 
 
 def main():

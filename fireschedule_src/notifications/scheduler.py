@@ -4,10 +4,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Set
 
-from src.notifications.service import NotificationService
-from src.notifications.config import ReminderConfig
-from src.storage.markdown import MarkdownStorage
-from src.models.events import Category
+from fireschedule_src.notifications.service import NotificationService
+from fireschedule_src.notifications.config import ReminderConfig
+from fireschedule_src.storage.markdown import MarkdownStorage
+from fireschedule_src.models.events import Category
 
 logger = logging.getLogger(__name__)
 

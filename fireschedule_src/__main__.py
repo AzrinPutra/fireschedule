@@ -6,9 +6,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config import config
-from src.models.events import Category, BaseEvent, LearningEvent
-from src.storage.markdown import MarkdownStorage
+from fireschedule_src.config import config
+from fireschedule_src.models.events import Category, BaseEvent, LearningEvent
+from fireschedule_src.storage.markdown import MarkdownStorage
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
     config.load()
 
     if args.tui:
-        from src.tui.app import FireScheduleApp
+        from fireschedule_src.tui.app import FireScheduleApp
         app = FireScheduleApp()
         app.run()
     else:

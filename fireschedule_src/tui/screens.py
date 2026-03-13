@@ -6,7 +6,7 @@ from textual.screen import Screen
 from textual.widgets import Static
 from textual.containers import Container, VerticalScroll
 
-from src.tui.widgets import WeekView
+from fireschedule_src.tui.widgets import WeekView
 
 
 class MenuScreen(Screen):
@@ -30,7 +30,7 @@ class MenuScreen(Screen):
         )
 
     def on_mount(self) -> None:
-        self.app.bind("d", "push_screen('dashboard')", "Dashboard")
+        self.app.bind("d", "push_screen('dashboard')")
 
     def on_screen_resumed(self) -> None:
         self.query_one("#title", Static).focus()
@@ -44,11 +44,11 @@ class DashboardScreen(Screen):
         self.week_view: WeekView = None
 
     def compose(self):
-        from src.integrations.gcal import GoogleCalendarAuth, SyncStatus
-        from src.config import config
+        from fireschedule_src.integrations.gcal import GoogleCalendarAuth, SyncStatus
+        from fireschedule_src.config import config
         
         config.load()
-        gcal_config = config.data.get("gcal", {})
+        gcal_config = config.get("gcal", {})
         
         auth = GoogleCalendarAuth(
             credentials_file=gcal_config.get("credentials_file", "credentials.json"),
@@ -76,10 +76,10 @@ class DashboardScreen(Screen):
         self._setup_keybindings()
 
     def _setup_keybindings(self):
-        self.app.bind("j", self._navigate_down, "Down")
-        self.app.bind("k", self._navigate_up, "Up")
-        self.app.bind("h", self._prev_week, "Prev Week")
-        self.app.bind("l", self._next_week, "Next Week")
+        self.app.bind("j", self._navigate_down)
+        self.app.bind("k", self._navigate_up)
+        self.app.bind("h", self._prev_week)
+        self.app.bind("l", self._next_week)
 
     def action_navigate_down(self):
         if self.week_view:

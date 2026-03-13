@@ -1,5 +1,5 @@
 """FireSchedule TUI - Terminal User Interface."""
 
-from src.tui.app import FireScheduleApp
+from fireschedule_src.tui.app import FireScheduleApp
 
 __all__ = ["FireScheduleApp"]

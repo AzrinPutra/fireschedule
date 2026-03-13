@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime, timedelta
 
-from src.models.events import (
+from fireschedule_src.models.events import (
     BaseEvent, Category, EventType, Priority
 )
-from src.storage.markdown import MarkdownStorage
+from fireschedule_src.storage.markdown import MarkdownStorage
 
 
 class GoogleCalendarAuth:
